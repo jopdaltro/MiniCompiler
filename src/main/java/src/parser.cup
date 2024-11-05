@@ -1,0 +1,256 @@
+import java_cup.runtime.*;
+
+terminal ADD, SUBTRACT, MULTIPLY, DIVIDE, POT;
+terminal LPAREN, RPAREN, EQUAL, GREATER_EQUAL, LESS_EQUAL, BAR, COMMA, CRASIS;
+terminal IF, THEN, ELSE, INT, FLOAT, BOOL, CHAR, TRUE, FALSE, CASE, IN, LET, OF, WHERE;
+terminal UNDER_LINE, INTEGER, FLOAT_TYPE, CHAR_TYPE, COLON;
+terminal SEMICOLON, ID, VARSYM, BACKSLASH; 
+terminal LBRACKET, RBRACKET, LBRACE, RBRACE, LEFT_ARROW;
+terminal DOTDOT, STRING, NOT, AND, OR, GREATER, LESS, EQUALEQUAL, DIF, UMINUS, TYPE_STRING, TIL ;
+
+non terminal body, topdecls, topdecl, decl, decls, decl_list, gendecl, funlhs, rhs, pat;
+non terminal type, vars, btype, atype;
+non terminal type_list_tuple, virgula_list, funlhs_apats, varop, gdrhs, fpat_list;
+non terminal guard, infixexp, lexp, apat_list, alts, fexp, expop;
+non terminal aexp, gcon, exp_list_tupla, exp_list, qual_list, qop, qual, exp, pat_list, pat_list_tuple;
+non terminal var, fpat, apat, qcon, lpat, gdpat, guards, alt, gconsym, qvarop, qvarsym, qconop, patop, guards_list;
+
+precedence nonassoc LPAREN, RPAREN;     // Parênteses
+precedence nonassoc LBRACKET, RBRACKET;  // Colchetes
+precedence nonassoc LBRACE, RBRACE;        // Chaves
+
+precedence right LET;
+precedence left COMMA;
+precedence right COLON;
+precedence right DOTDOT;
+precedence left AND;
+precedence left OR;
+precedence nonassoc NOT;
+precedence left GREATER, LESS, GREATER_EQUAL, LESS_EQUAL, EQUALEQUAL, DIF;
+precedence left ADD, SUBTRACT;
+precedence left MULTIPLY, DIVIDE;
+precedence right POT;
+precedence right TIL;
+precedence left UMINUS;
+precedence left VARSYM, CRASIS;
+
+
+// Definição das produções
+start with body;
+
+body ::=  topdecls ;
+
+topdecls ::= topdecl SEMICOLON topdecls | topdecl;
+
+topdecl ::=  decl;
+
+decls ::= LBRACE decl_list RBRACE ;
+
+decl_list ::= decl SEMICOLON decl_list | decl 
+            ;
+
+decl ::= gendecl 
+        | funlhs rhs
+        | pat rhs
+        ;
+
+gendecl ::= vars DOTDOT type | /* vazio */;
+
+vars ::= var | var COMMA vars;
+
+type ::= btype | btype LET type;
+
+btype ::= btype atype | atype;
+
+atype ::=
+      INT
+      | FLOAT
+      | BOOL
+      | CHAR
+      | TYPE_STRING
+      | LPAREN type_list_tuple RPAREN
+      | LBRACKET type RBRACKET
+      | LPAREN type RPAREN
+      ;
+
+type_list_tuple ::= type COMMA type_list_tuple | type COMMA type ;
+
+funlhs ::= var apat
+       | var apat funlhs_apats
+       | patop
+       | LPAREN funlhs RPAREN apat funlhs_apats
+       ;
+
+funlhs_apats ::= apat funlhs_apats;
+
+apat_list ::= apat | apat_list apat; 
+
+apat ::= var 
+     | qcon LBRACE fpat_list RBRACE
+     | INT
+     | FLOAT
+     | CHAR
+     | STRING
+     | TRUE
+     | FALSE
+     | gcon
+     | UNDER_LINE
+     | LPAREN pat RPAREN
+     | LPAREN pat_list_tuple RPAREN
+     | LBRACKET pat_list RPAREN
+     ;
+
+
+fpat_list ::= 
+          /* vazio */
+          | fpat_list COMMA fpat
+          | fpat
+          ;
+
+fpat ::= var EQUAL pat;
+
+pat_list_tuple ::= pat COMMA pat_list_tuple
+               | pat COMMA pat
+               ;
+
+
+pat_list ::= pat COMMA pat_list
+         | pat
+         ;
+
+patop ::= pat varop pat
+         | pat ADD pat
+         | pat SUBTRACT pat
+         | pat MULTIPLY pat
+         | pat DIVIDE pat
+         | pat POT pat
+         | pat GREATER_EQUAL pat
+         | pat LESS_EQUAL pat
+         | pat GREATER pat
+         | pat LESS pat
+         | pat EQUALEQUAL pat
+         | pat DIF pat
+         | pat OR pat
+         | pat NOT pat
+         | pat AND pat
+         ;
+
+pat ::= lpat qconop pat| lpat;
+
+lpat ::= apat
+     | SUBTRACT INTEGER
+     | SUBTRACT FLOAT_TYPE
+     %prec UMINUS 
+     | gcon apat_list
+     ;
+
+rhs ::= EQUAL exp WHERE decls
+    | gdrhs WHERE decls
+    | EQUAL exp
+    | gdrhs
+    ;
+
+gdrhs ::= guards EQUAL exp
+      | guards EQUAL exp gdrhs
+      ;
+
+guards ::= BAR guards_list;
+
+guards_list ::= guard COMMA guards_list| guard;
+
+guard ::= pat LEFT_ARROW infixexp
+      | LET decls
+      | infixexp
+      ;
+
+aexp ::= var
+     | INTEGER
+     | FLOAT_TYPE
+     | CHAR_TYPE
+     | STRING
+     | TRUE
+     | FALSE
+     | LPAREN exp RPAREN
+     | LPAREN exp_list_tupla RPAREN
+     | LBRACKET exp_list RBRACKET
+     | LBRACKET exp BAR qual_list RBRACKET
+     | LPAREN infixexp qop RPAREN
+     ;
+
+exp_list_tupla ::= exp COMMA exp_list_tupla| exp COMMA exp;
+
+exp_list ::= exp COMMA exp_list | exp ;
+
+qual_list ::= qual COMMA qual_list| qual;
+
+exp ::= infixexp DOTDOT type| infixexp;
+
+infixexp ::= expop
+         | aexp
+         | SUBTRACT infixexp %prec UMINUS
+         |lexp
+         ;
+
+expop ::= infixexp varop infixexp
+         | infixexp ADD infixexp
+         | infixexp SUBTRACT infixexp
+         | infixexp MULTIPLY infixexp
+         | infixexp DIVIDE infixexp
+         | infixexp POT infixexp
+         | infixexp GREATER_EQUAL infixexp
+         | infixexp LESS_EQUAL infixexp
+         | infixexp GREATER infixexp
+         | infixexp LESS infixexp
+         | infixexp EQUALEQUAL infixexp
+         | infixexp DIF infixexp
+         | infixexp OR infixexp
+         | infixexp NOT infixexp
+         | infixexp AND infixexp
+         ;
+lexp ::= BACKSLASH apat_list LET exp
+     | LET decls IN exp
+     | IF exp THEN  ELSE exp
+     | IF exp SEMICOLON THEN SEMICOLON ELSE exp
+     | CASE exp OF LBRACE alts RBRACE
+     | fexp
+     ;
+
+fexp ::= aexp aexp| aexp fexp;
+
+qual ::= pat LEFT_ARROW exp
+     | LET decls
+     | exp
+     ;
+
+alts ::= alt SEMICOLON alts| alt;
+
+alt ::= pat LET exp 
+    | pat LET exp WHERE decls
+    | pat gdpat
+    | pat gdpat WHERE decls
+    |
+    ;
+        
+gdpat ::= guards LET exp| guards LET exp gdpat;
+
+gcon ::= LPAREN RPAREN
+     | LBRACKET RBRACKET
+     | LPAREN COMMA virgula_list RPAREN
+     | qcon
+     ;
+
+virgula_list ::= COMMA virgula_list | COMMA;
+
+var ::= ID | LPAREN VARSYM RPAREN;
+
+qcon ::= LPAREN gconsym RPAREN;
+
+varop ::= VARSYM | CRASIS ID CRASIS;
+
+qvarop ::= qvarsym  | CRASIS ID CRASIS;
+
+qconop ::= gconsym;
+
+qop ::= qvarop | qconop;
+
+gconsym ::= COLON;
