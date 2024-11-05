@@ -1,0 +1,2 @@
+# MiniCompiler
+Mini compilador haskell
